@@ -1,10 +1,12 @@
 {
   "name": "stripe-checkout",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "node api/server.js"
+    "dev": "vercel dev",
+    "start": "node api/server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
