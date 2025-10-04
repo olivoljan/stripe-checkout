@@ -2,13 +2,22 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Allowed origins
+const allowedOrigins = [
+  "https://olivolja-dev.webflow.io",  // Webflow dev
+  "https://olivkassen.com"            // Production
+];
+
 export default async function handler(req, res) {
-  // Allow CORS for Webflow dev and prod
-  res.setHeader("Access-Control-Allow-Origin", "https://olivolja-dev.webflow.io");
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Handle preflight requests (OPTIONS)
+  // Handle preflight (OPTIONS)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
@@ -26,7 +35,7 @@ export default async function handler(req, res) {
         shipping_address_collection: {
           allowed_countries: ["SE", "DK", "NO", "FI"], // adjust if needed
         },
-        locale: "auto",
+        locale: "auto"
       });
 
       return res.status(200).json({ url: session.url });
