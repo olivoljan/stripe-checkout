@@ -2,9 +2,11 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Add all allowed frontends here
 const allowedOrigins = [
   "https://olivolja-dev.webflow.io",
-  "https://olivkassen.com",
+  "https://www.olivkassen.com",
+  "https://olivkassen.com"
 ];
 
 export default async function handler(req, res) {
