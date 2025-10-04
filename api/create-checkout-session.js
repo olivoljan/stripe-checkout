@@ -2,10 +2,9 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Allowed origins
 const allowedOrigins = [
-  "https://olivolja-dev.webflow.io",  // Webflow dev
-  "https://olivkassen.com"            // Production
+  "https://olivolja-dev.webflow.io",
+  "https://olivkassen.com",
 ];
 
 export default async function handler(req, res) {
@@ -17,29 +16,33 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Handle preflight (OPTIONS)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
   if (req.method === "POST") {
     try {
-      const { priceId, cancelUrl } = req.body;
+      const { priceId } = req.body;
+
+      if (!priceId) {
+        return res.status(400).json({ error: "Missing priceId" });
+      }
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card", "klarna"],
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: "https://olivkassen.com/tack",
-        cancel_url: cancelUrl || "https://olivkassen.com/avbruten",
+        success_url: "https://olivkassen.com/tack?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "https://olivkassen.com/test-checkout",
         shipping_address_collection: {
-          allowed_countries: ["SE", "DK", "NO", "FI"], // adjust if needed
+          allowed_countries: ["SE", "NO", "DK", "FI"],
         },
-        locale: "auto"
+        locale: "auto",
       });
 
       return res.status(200).json({ url: session.url });
     } catch (err) {
+      console.error("Stripe session error:", err);
       return res.status(500).json({ error: err.message });
     }
   } else {
