@@ -26,15 +26,16 @@ export default async function handler(req, res) {
     if (!priceId) return res.status(400).json({ error: "Missing priceId" });
 
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription", // keep this for recurring billing
+      mode: "subscription",
       payment_method_types: ["card", "klarna"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: "https://olivkassen.com/tack?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: cancelUrl || "https://olivkassen.com/abonnemang",
+      cancel_url: req.body.cancelUrl || req.headers.referer || "https://olivkassen.com/abonnemang",
       phone_number_collection: { enabled: true },
       shipping_address_collection: { allowed_countries: ["SE", "NO", "DK", "FI"] },
       locale: "auto",
-    });
+      automatic_tax: { enabled: true },
+    });    
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
