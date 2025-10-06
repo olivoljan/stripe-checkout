@@ -17,7 +17,6 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
@@ -30,12 +29,18 @@ export default async function handler(req, res) {
       payment_method_types: ["card", "klarna"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: "https://olivkassen.com/tack?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: req.body.cancelUrl || req.headers.referer || "https://olivkassen.com/abonnemang",
+      cancel_url:
+        cancelUrl ||
+        req.headers.referer ||
+        "https://olivkassen.com/abonnemang",
       phone_number_collection: { enabled: true },
-      shipping_address_collection: { allowed_countries: ["SE", "NO", "DK", "FI"] },
+      shipping_address_collection: {
+        allowed_countries: ["SE", "NO", "DK", "FI"],
+      },
       locale: "auto",
       automatic_tax: { enabled: true },
-    });    
+      customer_creation: "always", // ✅ prevents “customer_creation” / “customer_update” errors
+    });
 
     return res.status(200).json({ url: session.url });
   } catch (err) {
