@@ -1,47 +1,47 @@
 import Stripe from "stripe";
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const allowedOrigins = [
-  "https://olivolja-dev.webflow.io", // Webflow test
-  "https://olivkassen.com",          // Live domain
-  "https://www.olivkassen.com"       // Live www
+  "https://olivolja-dev.webflow.io",
+  "https://www.olivkassen.com",
+  "https://olivkassen.com",
 ];
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
-
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
-
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const { priceId, cancelUrl } = req.body;
 
     if (!priceId) return res.status(400).json({ error: "Missing priceId" });
 
+    // Use live or test environment automatically
+    const domainUrl = process.env.DOMAIN_URL || "https://stripe-checkout-sage.vercel.app";
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card", "klarna"],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.DOMAIN_URL}/tack?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl || `${process.env.DOMAIN_URL}/abonnemang`,
+      success_url: "https://olivkassen.com/tack?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: cancelUrl || req.headers.referer || origin,
       phone_number_collection: { enabled: true },
-      shipping_address_collection: {
-      allowed_countries: ["SE", "NO", "DK", "FI"],
-      },
+      shipping_address_collection: { allowed_countries: ["SE", "NO", "DK", "FI"] },
       locale: "auto",
       automatic_tax: { enabled: true },
     });
 
-    res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("Stripe session error:", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
